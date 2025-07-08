@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Resume Optimizer</title>
-    <link rel="stylesheet" href="css.css">
+    
+    <!-- FAVICON LINK: Moved to the correct <head> section and filename fixed -->
+    <link rel="icon" type="image/png" href="favicon.png"> 
+    
+    <link rel="stylesheet" href="css/css.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +18,7 @@
     <div class="container">
         <header class="hero-section">
             <h1>AI Resume Optimizer</h1>
-            <link rel="icon" type="image/png" href="favsicon.png"> 
+            <!-- The link tag was removed from here -->
             <p class="subtitle">Transform your resume with AI-powered optimization.</p>
         </header>
         <main>
@@ -41,114 +45,103 @@
                     <p id="resultMessage"></p>
                 </div>
             </section>
-            <!-- Step 4: Display Result -->
-            <!-- <section id="optimizedResult" class="result-section" style="display:none;">
-                <h2>Your Optimized Resume</h2>
-                <div class="result-content">
-                    <h3>Summary</h3>
-                    <p id="optimizedSummary"></p>
-                    <h3>Skills</h3>
-                    <p id="optimizedSkills"></p>
-                    <button class="btn btn-primary" onclick="copyToClipboard()">Copy to Clipboard</button>
-                </div>
-            </section> -->
+            <!-- Result section is commented out as it's not used in the download-only workflow -->
+            <!-- 
+            <section id="optimizedResult" class="result-section" style="display:none;">
+                ...
+            </section> 
+            -->
         </main>
     </div>
 
-    <!-- index.html - Final <script> block -->
-
-<script>
-    // This is the complete, final script for your index.html
-
-    // We use sessionStorage to keep the resume ID even if the page is refreshed.
+    <script>
+        // Using sessionStorage to keep the resume ID even if the page is refreshed.
     
-    // --- DOM ELEMENT REFERENCES ---
-    const fileInput = document.getElementById('resumeFile');
-    const fileStatus = document.getElementById('fileStatus');
-    const jobDescriptionInput = document.getElementById('jobDescription');
-    const resultMessage = document.getElementById('resultMessage');
+        // DOM ELEMENT REFERENCES
+        const fileInput = document.getElementById('resumeFile');
+        const fileStatus = document.getElementById('fileStatus');
+        const jobDescriptionInput = document.getElementById('jobDescription');
+        const resultMessage = document.getElementById('resultMessage');
 
-    // --- UPLOAD LOGIC ---
-    fileInput.addEventListener('change', () => {
-        if (!fileInput.files.length) return;
+        // UPLOAD LOGIC
+        fileInput.addEventListener('change', () => {
+            if (!fileInput.files.length) return;
 
-        const file = fileInput.files[0];
-        fileStatus.textContent = `Processing: ${file.name}...`;
-        const formData = new FormData();
-        formData.append("resume", file);
+            const file = fileInput.files[0];
+            fileStatus.textContent = `Processing: ${file.name}...`;
+            const formData = new FormData();
+            formData.append("resume", file);
 
-        fetch("/api/upload", { method: "POST", body: formData })
-            .then(response => {
-                if (!response.ok) return response.json().then(err => { throw new Error(err.error || 'Server error') });
-                return response.json();
-            })
-            .then(data => {
-                fileStatus.textContent = ` ${data.message}`;
-                // Save the ID to sessionStorage so it survives a page refresh
-                sessionStorage.setItem('currentResumeId', data.resumeId);
-            })
-            .catch(error => {
-                fileStatus.textContent = ` Upload failed: ${error.message}`;
-            });
-    });
+            // The '/api/' prefix is necessary for Vercel deployment
+            fetch("/api/upload", { method: "POST", body: formData })
+                .then(response => {
+                    if (!response.ok) return response.json().then(err => { throw new Error(err.error || 'Server error') });
+                    return response.json();
+                })
+                .then(data => {
+                    fileStatus.textContent = `✅ ${data.message}`;
+                    sessionStorage.setItem('currentResumeId', data.resumeId);
+                })
+                .catch(error => {
+                    fileStatus.textContent = `❌ Upload failed: ${error.message}`;
+                });
+        });
 
-    // --- COMBINED OPTIMIZE AND DOWNLOAD LOGIC ---
-    function optimizeResume() {
-        // Retrieve the ID from sessionStorage
-        const currentResumeId = sessionStorage.getItem('currentResumeId');
-        const jobDesc = jobDescriptionInput.value.trim();
-        resultMessage.textContent = 'Optimizing and preparing download...';
+        // COMBINED OPTIMIZE AND DOWNLOAD LOGIC
+        function optimizeResume() {
+            const currentResumeId = sessionStorage.getItem('currentResumeId');
+            const jobDesc = jobDescriptionInput.value.trim();
+            resultMessage.textContent = 'Optimizing and preparing download...';
 
-        if (!currentResumeId) {
-            resultMessage.textContent = " Please upload a resume first.";
-            return;
-        }
-        if (!jobDesc) {
-            resultMessage.textContent = " Please enter a job description.";
-            return;
-        }
+            if (!currentResumeId) {
+                resultMessage.textContent = "❌ Please upload a resume first.";
+                return;
+            }
+            if (!jobDesc) {
+                resultMessage.textContent = "❌ Please enter a job description.";
+                return;
+            }
 
-        // --- Step 1: Call the /optimize endpoint ---
-        fetch('/api/optimize', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ resumeId: currentResumeId, jobDescription: jobDesc })
-        })
-        .then(response => {
-            if (!response.ok) return response.json().then(err => { throw new Error(err.error || 'Optimization failed') });
-            return response.json();
-        })
-        .then(optimizationData => {
-            resultMessage.textContent = ` ${optimizationData.message}`;
-            
-            // --- Step 2: Immediately call the /download-pdf endpoint ---
-            const optimizedResume = optimizationData.resume;
-            return fetch('/download-pdf', {
+            // Step 1: Call the /optimize endpoint
+            fetch('/api/optimize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(optimizedResume)
+                body: JSON.stringify({ resumeId: currentResumeId, jobDescription: jobDesc })
+            })
+            .then(response => {
+                if (!response.ok) return response.json().then(err => { throw new Error(err.error || 'Optimization failed') });
+                return response.json();
+            })
+            .then(optimizationData => {
+                resultMessage.textContent = `✅ ${optimizationData.message}`;
+                const optimizedResume = optimizationData.resume;
+                // Step 2: Immediately call the /download-pdf endpoint
+                return fetch('/api/download-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(optimizedResume)
+                });
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('PDF generation failed.');
+                return response.blob();
+            })
+            .then(blob => {
+                // Step 3: Trigger the browser download
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'Optimized-Resume.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            })
+            .catch(err => {
+                resultMessage.textContent = `❌ Error: ${err.message}`;
             });
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('PDF generation failed.');
-            return response.blob();
-        })
-        .then(blob => {
-            // --- Step 3: Trigger the browser download ---
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = 'Optimized-Resume.pdf';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            a.remove();
-        })
-        .catch(err => {
-            resultMessage.textContent = ` Error: ${err.message}`;
-        });
-    }
-</script>
+        }
+    </script>
 </body>
 </html>
