@@ -90,25 +90,25 @@ app.post('/upload', async (req, res) => {
     }
 });
 
-app.post('/optimize', async (req, res) => {
-    const { resumeId, jobDescription } = req.body;
-    if (!resumeId || !jobDescription) return res.status(400).json({ error: "Missing resumeId or jobDescription." });
-    try {
-        const resume = await db.collection("resumes").findOne({ _id: new ObjectId(resumeId) });
-        if (!resume) return res.status(404).json({ error: "Resume not found." });
+// app.post('/optimize', async (req, res) => {
+//     const { resumeId, jobDescription } = req.body;
+//     if (!resumeId || !jobDescription) return res.status(400).json({ error: "Missing resumeId or jobDescription." });
+//     try {
+//         const resume = await db.collection("resumes").findOne({ _id: new ObjectId(resumeId) });
+//         if (!resume) return res.status(404).json({ error: "Resume not found." });
         
-        const optimizationPrompt = `You are an expert ATS optimization API. Your only function is to return a JSON object. Do NOT include any introductory text. Your response must begin with { and end with }. Based on the provided resume and job description, perform these tasks: 1. Rewrite the professional summary. 2. Enhance the skills section by adding keywords from the job description to the existing skills. 3. Subtly inject relevant keywords into the "responsibilities" of the experience and projects sections. Return a JSON object with these exact keys: "summary", "skills", "experience", "projects".`;
+//         const optimizationPrompt = `You are an expert ATS optimization API. Your only function is to return a JSON object. Do NOT include any introductory text. Your response must begin with { and end with }. Based on the provided resume and job description, perform these tasks: 1. Rewrite the professional summary. 2. Enhance the skills section by adding keywords from the job description to the existing skills. 3. Subtly inject relevant keywords into the "responsibilities" of the experience and projects sections. Return a JSON object with these exact keys: "summary", "skills", "experience", "projects".`;
         
-        const optimizedData = await callGemini(optimizationPrompt + `\n\nOriginal Resume:\n${JSON.stringify(resume)}\n\nJob Description:\n"""${jobDescription}"""`);
-        if (!optimizedData) throw new Error("The AI failed to return valid optimization JSON.");
+//         const optimizedData = await callGemini(optimizationPrompt + `\n\nOriginal Resume:\n${JSON.stringify(resume)}\n\nJob Description:\n"""${jobDescription}"""`);
+//         if (!optimizedData) throw new Error("The AI failed to return valid optimization JSON.");
         
-        const finalResume = { ...resume, summary: optimizedData.summary || resume.summary, skills: optimizedData.skills || resume.skills, experience: optimizedData.experience || resume.experience, projects: optimizedData.projects || resume.projects };
-        res.json({ message: "Resume optimized successfully!", resume: finalResume });
-    } catch (error) {
-        console.error("SERVER ERROR on /optimize:", error.message);
-        res.status(500).json({ error: "Failed to optimize resume." });
-    }
-});
+//         const finalResume = { ...resume, summary: optimizedData.summary || resume.summary, skills: optimizedData.skills || resume.skills, experience: optimizedData.experience || resume.experience, projects: optimizedData.projects || resume.projects };
+//         res.json({ message: "Resume optimized successfully!", resume: finalResume });
+//     } catch (error) {
+//         console.error("SERVER ERROR on /optimize:", error.message);
+//         res.status(500).json({ error: "Failed to optimize resume." });
+//     }
+// });
 
 // in server.js - replace the /download-pdf route
 
@@ -199,3 +199,4 @@ app.post('/download-pdf', (req, res) => {
 // --- SERVE FRONTEND & START SERVER ---
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 startServer();
+module.exports = app;
