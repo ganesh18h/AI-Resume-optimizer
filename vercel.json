@@ -12,8 +12,12 @@
       "dest": "server.js"
     },
     {
+      "src": "/css/(.*)",
+      "dest": "/frontend/css/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/frontend/$1"
+      "dest": "/frontend/index.html"
     }
   ]
 }
