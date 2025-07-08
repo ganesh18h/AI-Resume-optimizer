@@ -1,4 +1,4 @@
-// server.js - Modified for Vercel Deployment
+// server.js - Final Corrected Version for Vercel
 
 require('dotenv').config();
 const express = require('express');
@@ -12,24 +12,20 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const PDFDocument = require('pdfkit');
 const fileUpload = require('express-fileupload');
 
-// --- CHECK FOR ENVIRONMENT VARIABLES ---
-if (!process.env.GEMINI_API_KEY || !process.env.MONGO_URI) {
-    console.error("❌ FATAL ERROR: Missing GEMINI_API_KEY or MONGO_URI in environment variables.");
-    // VERCEL MODIFICATION: In a serverless environment, we don't exit the process.
-    // process.exit(1);
-}
-
 // --- SETUP ---
 const app = express();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 const mongoUri = process.env.MONGO_URI;
-const client = new MongoClient(mongoUri); // Removed deprecated options
+const client = new MongoClient(mongoUri);
 let db;
 
-// --- CONNECT TO DB (Run once per function invocation if needed) ---
+// --- DB CONNECTION HELPER ---
+// This function ensures we connect only when needed in a serverless environment.
 async function connectToDb() {
-    if (db) return db; // Return existing connection if available
+    if (db && client.topology && client.topology.isConnected()) {
+        return db; // Return existing connection
+    }
     try {
         await client.connect();
         db = client.db("resumeOptimizerDB");
@@ -44,12 +40,15 @@ async function connectToDb() {
 // --- MIDDLEWARE ---
 app.use(cors());
 app.use(express.json());
-
-// VERCEL MODIFICATION: Vercel's filesystem is read-only, except for the /tmp folder.
+// Use the /tmp/ directory, which is the only writable one on Vercel
 app.use(fileUpload({
     useTempFiles: true,
-    tempFileDir: '/tmp/' // Use the only writable directory
+    tempFileDir: '/tmp/'
 }));
+
+// --- API ROUTER ---
+// We create a router to prefix all our API endpoints with /api/
+const apiRouter = express.Router();
 
 // --- HELPER FUNCTION FOR CALLING GEMINI ---
 async function callGemini(prompt) {
@@ -63,11 +62,6 @@ async function callGemini(prompt) {
         return null;
     }
 }
-
-// VERCEL MODIFICATION: It's best practice to group API routes under an '/api' prefix.
-// This makes routing rules in vercel.json much cleaner.
-const apiRouter = express.Router();
-
 
 // --- API ROUTES ---
 apiRouter.post('/upload', async (req, res) => {
@@ -97,11 +91,11 @@ apiRouter.post('/upload', async (req, res) => {
         console.error('SERVER ERROR on /upload:', error.message);
         res.status(500).json({ error: 'Failed to process resume.' });
     } finally {
-        // Clean up the temporary file
-        fs.unlinkSync(resumeFile.tempFilePath);
+        if(resumeFile && resumeFile.tempFilePath) {
+            fs.unlinkSync(resumeFile.tempFilePath); // Clean up temporary file
+        }
     }
 });
-
 
 apiRouter.post('/download-pdf', (req, res) => {
     try {
@@ -110,8 +104,6 @@ apiRouter.post('/download-pdf', (req, res) => {
 
         const doc = new PDFDocument({ size: 'A4', margin: 40 });
         
-        // VERCEL MODIFICATION: Pipe the PDF to a buffer first, then send it.
-        // This is more reliable in a serverless environment than streaming directly.
         const buffers = [];
         doc.on('data', buffers.push.bind(buffers));
         doc.on('end', () => {
@@ -125,7 +117,6 @@ apiRouter.post('/download-pdf', (req, res) => {
         });
 
         let regularFont = 'Helvetica', boldFont = 'Helvetica-Bold';
-        // IMPORTANT: Make sure you have a 'Poppins-Fonts' folder at the root of your project
         try {
             doc.registerFont('Regular', path.join(__dirname, 'Poppins-Fonts', 'Poppins-Regular.ttf'));
             doc.registerFont('Bold', path.join(__dirname, 'Poppins-Fonts', 'Poppins-Bold.ttf'));
@@ -136,7 +127,7 @@ apiRouter.post('/download-pdf', (req, res) => {
         const pageMargin = 40;
         const drawSectionHeader = (title) => { doc.font(boldFont).fontSize(10).text(title.toUpperCase(), { characterSpacing: 1.5 }); doc.moveDown(0.3); doc.strokeColor('#333333').lineWidth(0.75).moveTo(pageMargin, doc.y).lineTo(doc.page.width - pageMargin, doc.y).stroke(); doc.moveDown(0.8); };
 
-        // --- PDF Content --- (Your PDF generation code is good)
+        // --- PDF Content ---
         doc.font(boldFont).fontSize(26).text(resumeData.contact_info?.name?.toUpperCase() || '', { align: 'center', characterSpacing: 1 });
         doc.moveDown(0.3);
         const contactItems = [resumeData.contact_info?.phone, resumeData.contact_info?.email, resumeData.contact_info?.linkedin, resumeData.contact_info?.github].filter(Boolean);
@@ -182,16 +173,14 @@ apiRouter.post('/download-pdf', (req, res) => {
         }
         
         doc.end();
-
     } catch (error) {
         console.error("SERVER ERROR on /download-pdf:", error);
         if (!res.headersSent) res.status(500).json({ error: "Failed to generate PDF." });
     }
 });
 
-// Use the API router
+// Use the API router under the /api prefix
 app.use('/api/', apiRouter);
 
-// VERCEL MODIFICATION: We do NOT start the server with app.listen.
-// Vercel does this automatically. We only export the 'app' object.
+// Export the app object for Vercel's serverless environment
 module.exports = app;
