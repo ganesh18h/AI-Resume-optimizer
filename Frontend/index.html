@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Optimizer</title>
+    <link rel="stylesheet" href="css.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="top-bar"></div>
+    <div class="container">
+        <header class="hero-section">
+            <h1>AI Resume Optimizer</h1>
+            <link rel="icon" type="image/png" href="favsicon.png"> 
+            <p class="subtitle">Transform your resume with AI-powered optimization.</p>
+        </header>
+        <main>
+            <section class="steps-section">
+                <!-- Step 1: Upload -->
+                <div class="step-card">
+                    <h2>1. Upload Resume</h2>
+                    <p>Upload your resume in PDF or Word format</p>
+                    <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" style="display: none;" />
+                    <button class="btn btn-primary" onclick="document.getElementById('resumeFile').click()">Choose File</button>
+                    <p id="fileStatus"></p>
+                </div>
+                <!-- Step 2: Job Description -->
+                <div class="step-card">
+                    <h2>2. Add Job Description</h2>
+                    <p>Paste the job description you're applying for</p>
+                    <textarea id="jobDescription" rows="6" placeholder="Paste job description here..."></textarea>
+                </div>
+                <!-- Step 3: Optimize -->
+                <div class="step-card">
+                    <h2>3. Get Optimized Resume</h2>
+                    <p>Get your AI-optimized, ATS-friendly resume</p>
+                    <button class="btn btn-primary" onclick="optimizeResume()">Optimize Now</button>
+                    <p id="resultMessage"></p>
+                </div>
+            </section>
+            <!-- Step 4: Display Result -->
+            <!-- <section id="optimizedResult" class="result-section" style="display:none;">
+                <h2>Your Optimized Resume</h2>
+                <div class="result-content">
+                    <h3>Summary</h3>
+                    <p id="optimizedSummary"></p>
+                    <h3>Skills</h3>
+                    <p id="optimizedSkills"></p>
+                    <button class="btn btn-primary" onclick="copyToClipboard()">Copy to Clipboard</button>
+                </div>
+            </section> -->
+        </main>
+    </div>
+
+    <!-- index.html - Final <script> block -->
+
+<script>
+    // This is the complete, final script for your index.html
+
+    // We use sessionStorage to keep the resume ID even if the page is refreshed.
+    
+    // --- DOM ELEMENT REFERENCES ---
+    const fileInput = document.getElementById('resumeFile');
+    const fileStatus = document.getElementById('fileStatus');
+    const jobDescriptionInput = document.getElementById('jobDescription');
+    const resultMessage = document.getElementById('resultMessage');
+
+    // --- UPLOAD LOGIC ---
+    fileInput.addEventListener('change', () => {
+        if (!fileInput.files.length) return;
+
+        const file = fileInput.files[0];
+        fileStatus.textContent = `Processing: ${file.name}...`;
+        const formData = new FormData();
+        formData.append("resume", file);
+
+        fetch("/upload", { method: "POST", body: formData })
+            .then(response => {
+                if (!response.ok) return response.json().then(err => { throw new Error(err.error || 'Server error') });
+                return response.json();
+            })
+            .then(data => {
+                fileStatus.textContent = ` ${data.message}`;
+                // Save the ID to sessionStorage so it survives a page refresh
+                sessionStorage.setItem('currentResumeId', data.resumeId);
+            })
+            .catch(error => {
+                fileStatus.textContent = ` Upload failed: ${error.message}`;
+            });
+    });
+
+    // --- COMBINED OPTIMIZE AND DOWNLOAD LOGIC ---
+    function optimizeResume() {
+        // Retrieve the ID from sessionStorage
+        const currentResumeId = sessionStorage.getItem('currentResumeId');
+        const jobDesc = jobDescriptionInput.value.trim();
+        resultMessage.textContent = 'Optimizing and preparing download...';
+
+        if (!currentResumeId) {
+            resultMessage.textContent = " Please upload a resume first.";
+            return;
+        }
+        if (!jobDesc) {
+            resultMessage.textContent = " Please enter a job description.";
+            return;
+        }
+
+        // --- Step 1: Call the /optimize endpoint ---
+        fetch('/optimize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resumeId: currentResumeId, jobDescription: jobDesc })
+        })
+        .then(response => {
+            if (!response.ok) return response.json().then(err => { throw new Error(err.error || 'Optimization failed') });
+            return response.json();
+        })
+        .then(optimizationData => {
+            resultMessage.textContent = ` ${optimizationData.message}`;
+            
+            // --- Step 2: Immediately call the /download-pdf endpoint ---
+            const optimizedResume = optimizationData.resume;
+            return fetch('/download-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(optimizedResume)
+            });
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('PDF generation failed.');
+            return response.blob();
+        })
+        .then(blob => {
+            // --- Step 3: Trigger the browser download ---
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'Optimized-Resume.pdf';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        })
+        .catch(err => {
+            resultMessage.textContent = ` Error: ${err.message}`;
+        });
+    }
+</script>
+</body>
+</html>

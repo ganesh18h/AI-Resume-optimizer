@@ -1,0 +1,201 @@
+/* --- General Setup & Variables --- */
+:root {
+    --bg-dark: #1a1d2e;
+    --bg-card: #2c314b;
+    --text-primary: #ffffff;
+    --text-secondary: #c0c3d4;
+    --primary-blue: #3b82f6;
+    --primary-green: #10b981;
+    --primary-purple: #8b5cf6;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.top-bar {
+    width: 100%;
+    height: 6px;
+    background-color: var(--primary-green);
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* --- Typography & Links --- */
+h1, h2, h3 {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+}
+
+h3 {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+/* --- Buttons --- */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background-color: var(--primary-blue);
+    color: white;
+}
+
+.btn-secondary {
+    width: 100%;
+    text-align: center;
+    background-color: var(--primary-blue);
+    color: white;
+    margin-top: 1.5rem;
+}
+
+/* --- Hero Section --- */
+.hero-section {
+    text-align: center;
+    padding: 4rem 0;
+}
+
+.hero-section .subtitle {
+    max-width: 600px;
+    margin: 0 auto 2rem auto;
+}
+
+/* --- Steps Section --- */
+.steps-section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-bottom: 6rem;
+    text-align: center;
+}
+
+.step-card {
+    background-color: var(--bg-card);
+    padding: 2rem;
+    border-radius: 12px;
+}
+
+.step-card h2 {
+    font-size: 1.25rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.icon-wrapper {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-upload { background-color: rgba(59, 130, 246, 0.2); color: var(--primary-blue); }
+.icon-add { background-color: rgba(16, 185, 129, 0.2); color: var(--primary-green); }
+.icon-get { background-color: rgba(139, 92, 246, 0.2); color: var(--primary-purple); }
+
+
+/* --- Features Section --- */
+.features-section {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 3rem;
+    align-items: center;
+    margin-bottom: 4rem;
+}
+
+.features-list ul {
+    list-style: none;
+}
+
+.features-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.features-list h2 {
+    margin-bottom: 2rem;
+}
+
+.checkmark {
+    color: var(--primary-green);
+    flex-shrink: 0;
+    margin-top: 5px;
+}
+
+.cta-card {
+    background-color: var(--bg-card);
+    padding: 2.5rem;
+    border-radius: 12px;
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 992px) {
+    .features-section {
+        grid-template-columns: 1fr;
+    }
+    .cta-card {
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2.5rem;
+    }
+    .steps-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 1rem;
+    }
+    h1 {
+        font-size: 2rem;
+    }
+    h2 {
+        font-size: 1.5rem;
+    }
+}
