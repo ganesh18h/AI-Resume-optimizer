@@ -100,9 +100,18 @@ app.post('/upload', upload.single('resume'), async (req, res) => {
     }
 });
 
-// --- TEST ROUTE ---
+// --- HEALTH CHECK ROUTE ---
 app.get('/api/test', (req, res) => {
     res.json({ status: "✅ API is working!" });
+});
+
+// --- HOMEPAGE ROUTE ---
+app.get("/", (req, res) => {
+    res.send(`
+        <h2>✅ Resume Optimizer API is Live</h2>
+        <p>Use the <code>POST /upload</code> route to parse resumes.</p>
+        <p>Use <code>GET /api/test</code> to check API health.</p>
+    `);
 });
 
 // --- EXPORT FOR VERCEL ---
